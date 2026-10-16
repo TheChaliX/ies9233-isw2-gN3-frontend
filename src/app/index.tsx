@@ -55,7 +55,7 @@ export default function TablaScreen() {
       contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
       <ThemedView style={styles.container}>
         <ThemedText type="subtitle">Tabla de posiciones</ThemedText>
-        <ThemedText themeColor="textSecondary">Liga Amateur Santafesina</ThemedText>
+        <ThemedText themeColor="textSecondary">Pipicucu League</ThemedText>
 
         {error && <ThemedText style={styles.mensaje}>{error}</ThemedText>}
         {!error && !filas && <ActivityIndicator style={styles.mensaje} />}
@@ -132,13 +132,13 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.two,
   },
   pos: {
-    width: 24,
+    width: 22,
   },
   equipo: {
     flex: 1,
   },
   num: {
-    width: 34,
+    width: 30,
     textAlign: 'center',
   },
 });
