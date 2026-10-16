@@ -1,98 +1,144 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { getPosiciones, type Posicion } from '@/services/posiciones';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
+const TORNEO_ID = 1;
+
+const COLUMNAS = [
+  { titulo: 'PJ', campo: 'pj' },
+  { titulo: 'PG', campo: 'pg' },
+  { titulo: 'PE', campo: 'pe' },
+  { titulo: 'PP', campo: 'pp' },
+  { titulo: 'DG', campo: 'dg' },
+  { titulo: 'Pts', campo: 'pts' },
+] as const;
+
+export default function TablaScreen() {
+  const theme = useTheme();
+  const safeAreaInsets = useSafeAreaInsets();
+  const insets = {
+    ...safeAreaInsets,
+    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
+  };
+  const contentPlatformStyle = Platform.select({
+    android: {
+      paddingTop: insets.top,
+      paddingLeft: insets.left,
+      paddingRight: insets.right,
+      paddingBottom: insets.bottom,
+    },
+    web: {
+      paddingTop: Spacing.six,
+      paddingBottom: Spacing.four,
+    },
+  });
+
+  const [filas, setFilas] = useState<Posicion[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getPosiciones(TORNEO_ID)
+      .then(setFilas)
+      .catch((e: Error) => setError(e.message));
+  }, []);
+
   return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+    <ScrollView
+      style={{ backgroundColor: theme.background }}
+      contentInset={insets}
+      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
+      <ThemedView style={styles.container}>
+        <ThemedText type="subtitle">Tabla de posiciones</ThemedText>
+        <ThemedText themeColor="textSecondary">Liga Amateur Santafesina</ThemedText>
 
-export default function HomeScreen() {
-  return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+        {error && <ThemedText style={styles.mensaje}>{error}</ThemedText>}
+        {!error && !filas && <ActivityIndicator style={styles.mensaje} />}
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+        {filas && (
+          <ThemedView style={styles.tabla}>
+            <ThemedView type="backgroundElement" style={styles.fila}>
+              <ThemedText type="smallBold" themeColor="textSecondary" style={styles.pos}>
+                #
+              </ThemedText>
+              <ThemedText type="smallBold" themeColor="textSecondary" style={styles.equipo}>
+                Equipo
+              </ThemedText>
+              {COLUMNAS.map((c) => (
+                <ThemedText
+                  key={c.campo}
+                  type="smallBold"
+                  themeColor="textSecondary"
+                  style={styles.num}>
+                  {c.titulo}
+                </ThemedText>
+              ))}
+            </ThemedView>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+            {filas.map((p) => (
+              <ThemedView key={p.equipo} style={styles.fila}>
+                <ThemedText type="small" style={styles.pos}>
+                  {p.posicion}
+                </ThemedText>
+                <ThemedText type="small" style={styles.equipo} numberOfLines={1}>
+                  {p.equipo}
+                </ThemedText>
+                {COLUMNAS.map((c) => (
+                  <ThemedText
+                    key={c.campo}
+                    type={c.campo === 'pts' ? 'smallBold' : 'small'}
+                    style={styles.num}>
+                    {c.campo === 'dg' && p.dg > 0 ? `+${p.dg}` : p[c.campo]}
+                  </ThemedText>
+                ))}
+              </ThemedView>
+            ))}
+          </ThemedView>
+        )}
+      </ThemedView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  contentContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
   container: {
     flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
     maxWidth: MaxContentWidth,
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.three,
+    gap: Spacing.two,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
+  mensaje: {
+    marginTop: Spacing.four,
     textAlign: 'center',
   },
-  code: {
-    textTransform: 'uppercase',
+  tabla: {
+    marginTop: Spacing.three,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  fila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.two,
+    borderRadius: Spacing.two,
+  },
+  pos: {
+    width: 24,
+  },
+  equipo: {
+    flex: 1,
+  },
+  num: {
+    width: 34,
+    textAlign: 'center',
   },
 });
