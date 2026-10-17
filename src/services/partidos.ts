@@ -1,3 +1,5 @@
+import { API_URL, mensajeError, pedir } from './api';
+
 export type EstadoPartido = 'PROGRAMADO' | 'EN_JUEGO' | 'FINALIZADO' | 'SUSPENDIDO';
 
 export type Partido = {
@@ -42,11 +44,8 @@ export type NuevoEvento = {
 
 export type Plantel = { local: Jugador[]; visitante: Jugador[] };
 
-// Mientras el backend no tenga el endpoint, dejar en true.
-const USAR_MOCK = true;
-
-// Android emulator: http://10.0.2.2:8080 — celular real: la IP de tu PC en la red.
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080';
+// true = datos de mentira en memoria (sin backend); false = habla con el backend real.
+const USAR_MOCK = false;
 
 // Premier League 2026-27. La "cancha" es el estadio del equipo local.
 const ESTADIOS: Record<string, string> = {
@@ -232,29 +231,29 @@ function buscarPartidoMock(id: number): Partido {
   return partido;
 }
 
-// Endpoint supuesto (a acordar con el backend): GET /torneos/{id}/partidos
+// GET /torneos/{id}/partidos
 export async function getPartidos(torneoId: number): Promise<Partido[]> {
   if (USAR_MOCK) {
     await esperar();
     return MOCK.map((x) => ({ ...x })); // copias: el mock se modifica en memoria
   }
-  const res = await fetch(`${API_URL}/torneos/${torneoId}/partidos`);
-  if (!res.ok) throw new Error('No se pudieron cargar los partidos');
+  const res = await pedir(`${API_URL}/torneos/${torneoId}/partidos`);
+  if (!res.ok) throw new Error(await mensajeError(res, 'No se pudieron cargar los partidos'));
   return res.json();
 }
 
-// Endpoint supuesto: GET /partidos/{id}
+// GET /partidos/{id}
 export async function getPartido(id: number): Promise<Partido> {
   if (USAR_MOCK) {
     await esperar();
     return { ...buscarPartidoMock(id) };
   }
-  const res = await fetch(`${API_URL}/partidos/${id}`);
-  if (!res.ok) throw new Error('No se pudo cargar el partido');
+  const res = await pedir(`${API_URL}/partidos/${id}`);
+  if (!res.ok) throw new Error(await mensajeError(res, 'No se pudo cargar el partido'));
   return res.json();
 }
 
-// Endpoint supuesto: GET /partidos/{id}/eventos  (ordenados por minuto)
+// GET /partidos/{id}/eventos  (ordenados por minuto)
 export async function getEventos(partidoId: number): Promise<EventoPartido[]> {
   if (USAR_MOCK) {
     await esperar();
@@ -262,24 +261,24 @@ export async function getEventos(partidoId: number): Promise<EventoPartido[]> {
       .sort((a, b) => a.minuto - b.minuto || a.id - b.id)
       .map((e) => ({ ...e }));
   }
-  const res = await fetch(`${API_URL}/partidos/${partidoId}/eventos`);
-  if (!res.ok) throw new Error('No se pudieron cargar los eventos');
+  const res = await pedir(`${API_URL}/partidos/${partidoId}/eventos`);
+  if (!res.ok) throw new Error(await mensajeError(res, 'No se pudieron cargar los eventos'));
   return res.json();
 }
 
-// Endpoint supuesto: GET /partidos/{id}/jugadores -> { local: [...], visitante: [...] }
+// GET /partidos/{id}/jugadores -> { local: [...], visitante: [...] }
 export async function getJugadores(partidoId: number): Promise<Plantel> {
   if (USAR_MOCK) {
     await esperar();
     const partido = buscarPartidoMock(partidoId);
     return { local: plantelMock(partido.local), visitante: plantelMock(partido.visitante) };
   }
-  const res = await fetch(`${API_URL}/partidos/${partidoId}/jugadores`);
-  if (!res.ok) throw new Error('No se pudieron cargar los jugadores');
+  const res = await pedir(`${API_URL}/partidos/${partidoId}/jugadores`);
+  if (!res.ok) throw new Error(await mensajeError(res, 'No se pudieron cargar los jugadores'));
   return res.json();
 }
 
-// Endpoint supuesto: POST /partidos/{id}/eventos  body: { jugadorId, tipo, minuto }
+// POST /partidos/{id}/eventos  body: { jugadorId, tipo, minuto }
 // El backend debería rechazarlo (4xx) si el partido no está EN_JUEGO o el jugador no es de ninguno de los dos equipos.
 export async function crearEvento(partidoId: number, nuevo: NuevoEvento): Promise<EventoPartido> {
   if (USAR_MOCK) {
@@ -295,16 +294,16 @@ export async function crearEvento(partidoId: number, nuevo: NuevoEvento): Promis
     recalcularMarcador(partido);
     return { ...evento };
   }
-  const res = await fetch(`${API_URL}/partidos/${partidoId}/eventos`, {
+  const res = await pedir(`${API_URL}/partidos/${partidoId}/eventos`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(nuevo),
   });
-  if (!res.ok) throw new Error('No se pudo guardar el evento');
+  if (!res.ok) throw new Error(await mensajeError(res, 'No se pudo guardar el evento'));
   return res.json();
 }
 
-// Endpoint supuesto: DELETE /partidos/{id}/eventos/{eventoId}  (para corregir un evento mal cargado)
+// DELETE /partidos/{id}/eventos/{eventoId}  (para corregir un evento mal cargado)
 export async function eliminarEvento(partidoId: number, eventoId: number): Promise<void> {
   if (USAR_MOCK) {
     await esperar();
@@ -315,11 +314,11 @@ export async function eliminarEvento(partidoId: number, eventoId: number): Promi
     recalcularMarcador(partido);
     return;
   }
-  const res = await fetch(`${API_URL}/partidos/${partidoId}/eventos/${eventoId}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('No se pudo borrar el evento');
+  const res = await pedir(`${API_URL}/partidos/${partidoId}/eventos/${eventoId}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(await mensajeError(res, 'No se pudo borrar el evento'));
 }
 
-// Endpoint supuesto: PATCH /partidos/{id}/estado  body: { estado }
+// PATCH /partidos/{id}/estado  body: { estado }
 // Solo PROGRAMADO -> EN_JUEGO y EN_JUEGO -> FINALIZADO.
 export async function cambiarEstadoPartido(partidoId: number, estado: EstadoPartido): Promise<Partido> {
   if (USAR_MOCK) {
@@ -329,11 +328,11 @@ export async function cambiarEstadoPartido(partidoId: number, estado: EstadoPart
     partido.estado = estado;
     return { ...partido };
   }
-  const res = await fetch(`${API_URL}/partidos/${partidoId}/estado`, {
+  const res = await pedir(`${API_URL}/partidos/${partidoId}/estado`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ estado }),
   });
-  if (!res.ok) throw new Error('No se pudo cambiar el estado del partido');
+  if (!res.ok) throw new Error(await mensajeError(res, 'No se pudo cambiar el estado del partido'));
   return res.json();
 }

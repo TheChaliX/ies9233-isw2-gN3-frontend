@@ -1,3 +1,5 @@
+import { API_URL, mensajeError, pedir } from './api';
+
 // Una fila de la tabla de posiciones.
 // El backend es quien calcula todo (puntos, desempate, orden); la app solo lo muestra.
 export type Posicion = {
@@ -11,11 +13,8 @@ export type Posicion = {
   pts: number; // puntos
 };
 
-// Mientras el backend no tenga el endpoint, dejar en true.
-const USAR_MOCK = true;
-
-// Android emulator: http://10.0.2.2:8080 — celular real: la IP de tu PC en la red.
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8080';
+// true = datos de mentira en memoria (sin backend); false = habla con el backend real.
+const USAR_MOCK = false;
 
 // Premier League 2026-27, tabla al 15/10/2026 (después de la fecha 6).
 const MOCK: Posicion[] = [
@@ -41,13 +40,13 @@ const MOCK: Posicion[] = [
   { posicion: 20, equipo: 'Fulham', pj: 6, pg: 0, pe: 2, pp: 4, dg: -4, pts: 2 },
 ];
 
-// Endpoint supuesto (a acordar con el backend): GET /torneos/{id}/posiciones
+// GET /torneos/{id}/posiciones
 export async function getPosiciones(torneoId: number): Promise<Posicion[]> {
   if (USAR_MOCK) {
     await new Promise((r) => setTimeout(r, 400));
     return MOCK;
   }
-  const res = await fetch(`${API_URL}/torneos/${torneoId}/posiciones`);
-  if (!res.ok) throw new Error('No se pudo cargar la tabla de posiciones');
+  const res = await pedir(`${API_URL}/torneos/${torneoId}/posiciones`);
+  if (!res.ok) throw new Error(await mensajeError(res, 'No se pudo cargar la tabla de posiciones'));
   return res.json();
 }
