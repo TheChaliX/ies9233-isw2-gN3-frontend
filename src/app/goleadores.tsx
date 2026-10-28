@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -9,6 +9,11 @@ import { useTheme } from '@/hooks/use-theme';
 import { getGoleadores, type Goleador } from '@/services/goleadores';
 
 const TORNEO_ID = 1;
+
+const MEDALLAS: Record<number, string> = { 1: '#F5B301', 2: '#B8C0CC', 3: '#CD7F32' };
+
+const iniciales = (nombre: string, apellido: string) =>
+  `${nombre[0] ?? ''}${apellido[0] ?? ''}`.toUpperCase();
 
 export default function GoleadoresScreen() {
   const theme = useTheme();
@@ -55,35 +60,41 @@ export default function GoleadoresScreen() {
         )}
 
         {filas && filas.length > 0 && (
-          <ThemedView style={styles.tabla}>
-            <ThemedView type="backgroundElement" style={styles.fila}>
-              <ThemedText type="smallBold" themeColor="textSecondary" style={styles.pos}>
-                #
-              </ThemedText>
-              <ThemedText type="smallBold" themeColor="textSecondary" style={styles.jugador}>
-                Jugador
-              </ThemedText>
-              <ThemedText type="smallBold" themeColor="textSecondary" style={styles.num}>
-                Goles
-              </ThemedText>
-            </ThemedView>
-
+          <ThemedView style={styles.lista}>
             {filas.map((g) => (
-              <ThemedView key={g.jugadorId} style={styles.fila}>
-                <ThemedText type="small" style={styles.pos}>
-                  {g.posicion}
-                </ThemedText>
-                <ThemedView style={styles.jugador}>
-                  <ThemedText type="small" numberOfLines={1}>
+              <ThemedView key={g.jugadorId} type="backgroundElement" style={styles.tarjeta}>
+                <View
+                  style={[
+                    styles.posicion,
+                    { backgroundColor: MEDALLAS[g.posicion] ?? 'rgba(128,128,128,0.25)' },
+                  ]}>
+                  <ThemedText
+                    type="smallBold"
+                    style={MEDALLAS[g.posicion] ? { color: '#1A1A1A' } : undefined}>
+                    {g.posicion}
+                  </ThemedText>
+                </View>
+
+                <View style={styles.avatar}>
+                  <ThemedText type="smallBold" style={{ color: '#FFFFFF' }}>
+                    {iniciales(g.nombre, g.apellido)}
+                  </ThemedText>
+                </View>
+
+                <View style={styles.info}>
+                  <ThemedText type="smallBold" numberOfLines={1}>
                     {g.nombre} {g.apellido}
                   </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
                     {g.equipo}
                   </ThemedText>
-                </ThemedView>
-                <ThemedText type="smallBold" style={styles.num}>
-                  {g.goles}
-                </ThemedText>
+                </View>
+
+                <View style={styles.golesPill}>
+                  <ThemedText type="smallBold" style={{ color: '#FFFFFF' }}>
+                    ⚽ {g.goles}
+                  </ThemedText>
+                </View>
               </ThemedView>
             ))}
           </ThemedView>
@@ -109,24 +120,39 @@ const styles = StyleSheet.create({
     marginTop: Spacing.four,
     textAlign: 'center',
   },
-  tabla: {
+  lista: {
     marginTop: Spacing.three,
+    gap: Spacing.two,
   },
-  fila: {
+  tarjeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.two,
-    borderRadius: Spacing.two,
+    gap: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: Spacing.three,
   },
-  pos: {
-    width: 22,
+  posicion: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  jugador: {
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#2F6FED',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  info: {
     flex: 1,
   },
-  num: {
-    width: 50,
-    textAlign: 'center',
+  golesPill: {
+    backgroundColor: '#16A34A',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
   },
 });

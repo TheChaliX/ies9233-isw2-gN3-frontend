@@ -13,6 +13,12 @@ import { ESTADOS, formatearHorario, textoEvento } from '@/utils/partidos';
 // Mientras el partido está EN_JUEGO se vuelve a pedir cada tanto, así se ve el "en vivo".
 const REFRESCO_MS = 15000;
 
+const COLOR_ESTADO: Record<string, string> = {
+  EN_JUEGO: '#DC2626',
+  FINALIZADO: '#16A34A',
+};
+const COLOR_ESTADO_DEFECTO = '#6B7280';
+
 // Los eventos del equipo local van a la izquierda y los del visitante a la derecha.
 function FilaEvento({ e }: { e: EventoPartido }) {
   const texto = (
@@ -23,9 +29,11 @@ function FilaEvento({ e }: { e: EventoPartido }) {
   return (
     <View style={styles.filaEvento}>
       <View style={styles.ladoLocal}>{e.lado === 'LOCAL' && texto}</View>
-      <ThemedText type="smallBold" themeColor="textSecondary" style={styles.minuto}>
-        {`${e.minuto}'`}
-      </ThemedText>
+      <View style={styles.minutoPill}>
+        <ThemedText type="smallBold" themeColor="textSecondary">
+          {`${e.minuto}'`}
+        </ThemedText>
+      </View>
       <View style={styles.ladoVisitante}>{e.lado === 'VISITANTE' && texto}</View>
     </View>
   );
@@ -78,23 +86,29 @@ export default function PartidoDetalleScreen() {
           </ThemedText>
 
           <ThemedView type="backgroundElement" style={styles.marcadorCard}>
+            <View
+              style={[
+                styles.badge,
+                { backgroundColor: COLOR_ESTADO[partido.estado] ?? COLOR_ESTADO_DEFECTO },
+              ]}>
+              <ThemedText type="smallBold" style={styles.badgeTexto}>
+                {partido.estado === 'EN_JUEGO' ? '● En vivo' : ESTADOS[partido.estado]}
+              </ThemedText>
+            </View>
+
             <View style={styles.marcador}>
               <ThemedText type="smallBold" style={styles.equipoLocal} numberOfLines={2}>
                 {partido.local}
               </ThemedText>
-              <ThemedText type="subtitle" style={styles.goles}>
-                {hayMarcador ? `${partido.golesLocal} - ${partido.golesVisitante}` : 'vs'}
-              </ThemedText>
+              <View style={styles.golesPill}>
+                <ThemedText type="subtitle" style={styles.goles}>
+                  {hayMarcador ? `${partido.golesLocal} - ${partido.golesVisitante}` : 'vs'}
+                </ThemedText>
+              </View>
               <ThemedText type="smallBold" style={styles.equipoVisitante} numberOfLines={2}>
                 {partido.visitante}
               </ThemedText>
             </View>
-            <ThemedText
-              type="small"
-              themeColor="textSecondary"
-              style={[styles.centrado, partido.estado === 'EN_JUEGO' && styles.enVivo]}>
-              {partido.estado === 'EN_JUEGO' ? '● En vivo' : ESTADOS[partido.estado]}
-            </ThemedText>
           </ThemedView>
 
           {/* TODO: mostrar solo si el usuario es el delegado de alguno de los dos equipos (todavía no hay login). */}
@@ -114,7 +128,13 @@ export default function PartidoDetalleScreen() {
           {eventos && eventos.length === 0 && (
             <ThemedText themeColor="textSecondary">Todavía no hay eventos</ThemedText>
           )}
-          {eventos?.map((e) => <FilaEvento key={e.id} e={e} />)}
+          {eventos && eventos.length > 0 && (
+            <ThemedView type="backgroundElement" style={styles.eventosCard}>
+              {eventos.map((e) => (
+                <FilaEvento key={e.id} e={e} />
+              ))}
+            </ThemedView>
+          )}
         </>
       )}
     </Pantalla>
@@ -129,17 +149,25 @@ const styles = StyleSheet.create({
   centrado: {
     textAlign: 'center',
   },
-  enVivo: {
-    color: '#d93025',
-  },
   marcadorCard: {
     padding: Spacing.three,
     borderRadius: Spacing.three,
-    gap: Spacing.two,
+    gap: Spacing.three,
+    alignItems: 'stretch',
+  },
+  badge: {
+    alignSelf: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  badgeTexto: {
+    color: '#FFFFFF',
   },
   marcador: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.two,
   },
   equipoLocal: {
     flex: 1,
@@ -148,13 +176,26 @@ const styles = StyleSheet.create({
   equipoVisitante: {
     flex: 1,
   },
+  golesPill: {
+    minWidth: 104,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    alignItems: 'center',
+    backgroundColor: 'rgba(128,128,128,0.2)',
+  },
   goles: {
-    minWidth: 96,
     textAlign: 'center',
+  },
+  eventosCard: {
+    padding: Spacing.three,
+    borderRadius: Spacing.three,
+    gap: Spacing.two,
   },
   filaEvento: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.two,
   },
   ladoLocal: {
     flex: 1,
@@ -164,8 +205,12 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'flex-start',
   },
-  minuto: {
-    width: 48,
-    textAlign: 'center',
+  minutoPill: {
+    minWidth: 44,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    alignItems: 'center',
+    backgroundColor: 'rgba(128,128,128,0.25)',
   },
 });
