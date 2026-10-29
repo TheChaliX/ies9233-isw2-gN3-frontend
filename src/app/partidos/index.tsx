@@ -13,6 +13,12 @@ import { ESTADOS, formatearHorario } from '@/utils/partidos';
 
 const TORNEO_ID = 1;
 
+const COLOR_ESTADO: Record<string, string> = {
+  EN_JUEGO: '#DC2626',
+  FINALIZADO: '#16A34A',
+};
+const COLOR_ESTADO_DEFECTO = '#6B7280';
+
 // Arranca en la primera fecha que todavía tiene algo pendiente (o la última si ya terminó todo).
 function fechaInicial(partidos: Partido[]) {
   if (partidos.length === 0) return null;
@@ -25,26 +31,43 @@ function fechaInicial(partidos: Partido[]) {
 function PartidoCard({ p }: { p: Partido }) {
   const router = useRouter();
   const hayMarcador = p.estado === 'EN_JUEGO' || p.estado === 'FINALIZADO';
+  const enVivo = p.estado === 'EN_JUEGO';
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/partidos/[id]', params: { id: String(p.id) } })}>
       <ThemedView type="backgroundElement" style={styles.card}>
+        <View style={styles.cabecera}>
+          <View
+            style={[
+              styles.badge,
+              { backgroundColor: COLOR_ESTADO[p.estado] ?? COLOR_ESTADO_DEFECTO },
+            ]}>
+            <ThemedText type="smallBold" style={styles.badgeTexto}>
+              {enVivo ? '● ' : ''}
+              {ESTADOS[p.estado]}
+            </ThemedText>
+          </View>
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.horario}>
+            {formatearHorario(p.horario)}
+          </ThemedText>
+        </View>
+
         <View style={styles.marcador}>
-          <ThemedText type="small" style={styles.local} numberOfLines={1}>
+          <ThemedText type="smallBold" style={styles.local} numberOfLines={1}>
             {p.local}
           </ThemedText>
-          <ThemedText type="smallBold" style={styles.centro}>
-            {hayMarcador ? `${p.golesLocal} - ${p.golesVisitante}` : 'vs'}
-          </ThemedText>
-          <ThemedText type="small" style={styles.visitante} numberOfLines={1}>
+          <View style={styles.resultado}>
+            <ThemedText type="smallBold" style={hayMarcador ? styles.goles : styles.vs}>
+              {hayMarcador ? `${p.golesLocal} - ${p.golesVisitante}` : 'vs'}
+            </ThemedText>
+          </View>
+          <ThemedText type="smallBold" style={styles.visitante} numberOfLines={1}>
             {p.visitante}
           </ThemedText>
         </View>
-        <ThemedText
-          type="small"
-          themeColor="textSecondary"
-          style={[styles.detalle, p.estado === 'EN_JUEGO' && styles.enVivo]}>
-          {ESTADOS[p.estado]} · {formatearHorario(p.horario)} · {p.cancha}
+
+        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1} style={styles.cancha}>
+          🏟️ {p.cancha}
         </ThemedText>
       </ThemedView>
     </Pressable>
@@ -157,11 +180,29 @@ const styles = StyleSheet.create({
   card: {
     padding: Spacing.three,
     borderRadius: Spacing.three,
-    gap: Spacing.one,
+    gap: Spacing.two,
+  },
+  cabecera: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.two,
+  },
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  badgeTexto: {
+    color: '#FFFFFF',
+  },
+  horario: {
+    flexShrink: 1,
   },
   marcador: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: Spacing.two,
   },
   local: {
     flex: 1,
@@ -170,14 +211,22 @@ const styles = StyleSheet.create({
   visitante: {
     flex: 1,
   },
-  centro: {
-    width: 64,
-    textAlign: 'center',
+  resultado: {
+    minWidth: 72,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+    backgroundColor: 'rgba(128,128,128,0.2)',
   },
-  detalle: {
-    textAlign: 'center',
+  goles: {
+    fontSize: 20,
+    lineHeight: 26,
   },
-  enVivo: {
-    color: '#d93025',
+  vs: {
+    opacity: 0.7,
+  },
+  cancha: {
+    textAlign: 'center',
   },
 });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -10,14 +10,17 @@ import { getPosiciones, type Posicion } from '@/services/posiciones';
 
 const TORNEO_ID = 1;
 
+const MEDALLAS: Record<number, string> = { 1: '#F5B301', 2: '#B8C0CC', 3: '#CD7F32' };
+
 const COLUMNAS = [
   { titulo: 'PJ', campo: 'pj' },
   { titulo: 'PG', campo: 'pg' },
   { titulo: 'PE', campo: 'pe' },
   { titulo: 'PP', campo: 'pp' },
   { titulo: 'DG', campo: 'dg' },
-  { titulo: 'Pts', campo: 'pts' },
 ] as const;
+
+const colorDG = (dg: number) => (dg > 0 ? '#16A34A' : dg < 0 ? '#DC2626' : undefined);
 
 export default function TablaScreen() {
   const theme = useTheme();
@@ -61,11 +64,9 @@ export default function TablaScreen() {
         {!error && !filas && <ActivityIndicator style={styles.mensaje} />}
 
         {filas && (
-          <ThemedView style={styles.tabla}>
-            <ThemedView type="backgroundElement" style={styles.fila}>
-              <ThemedText type="smallBold" themeColor="textSecondary" style={styles.pos}>
-                #
-              </ThemedText>
+          <ThemedView style={styles.lista}>
+            <View style={styles.cabecera}>
+              <View style={styles.pos} />
               <ThemedText type="smallBold" themeColor="textSecondary" style={styles.equipo}>
                 Equipo
               </ThemedText>
@@ -78,24 +79,49 @@ export default function TablaScreen() {
                   {c.titulo}
                 </ThemedText>
               ))}
-            </ThemedView>
+              <ThemedText
+                type="smallBold"
+                themeColor="textSecondary"
+                style={styles.ptsCabecera}>
+                Pts
+              </ThemedText>
+            </View>
 
             {filas.map((p) => (
-              <ThemedView key={p.equipo} style={styles.fila}>
-                <ThemedText type="small" style={styles.pos}>
-                  {p.posicion}
-                </ThemedText>
-                <ThemedText type="small" style={styles.equipo} numberOfLines={1}>
+              <ThemedView key={p.equipo} type="backgroundElement" style={styles.tarjeta}>
+                <View
+                  style={[
+                    styles.pos,
+                    { backgroundColor: MEDALLAS[p.posicion] ?? 'rgba(128,128,128,0.25)' },
+                  ]}>
+                  <ThemedText
+                    type="smallBold"
+                    style={MEDALLAS[p.posicion] ? { color: '#1A1A1A' } : undefined}>
+                    {p.posicion}
+                  </ThemedText>
+                </View>
+
+                <ThemedText type="smallBold" style={styles.equipo} numberOfLines={1}>
                   {p.equipo}
                 </ThemedText>
+
                 {COLUMNAS.map((c) => (
                   <ThemedText
                     key={c.campo}
-                    type={c.campo === 'pts' ? 'smallBold' : 'small'}
-                    style={styles.num}>
+                    type={c.campo === 'dg' ? 'smallBold' : 'small'}
+                    style={[
+                      styles.num,
+                      c.campo === 'dg' && colorDG(p.dg) ? { color: colorDG(p.dg) } : null,
+                    ]}>
                     {c.campo === 'dg' && p.dg > 0 ? `+${p.dg}` : p[c.campo]}
                   </ThemedText>
                 ))}
+
+                <View style={styles.ptsPill}>
+                  <ThemedText type="smallBold" style={{ color: '#FFFFFF' }}>
+                    {p.pts}
+                  </ThemedText>
+                </View>
               </ThemedView>
             ))}
           </ThemedView>
@@ -121,24 +147,49 @@ const styles = StyleSheet.create({
     marginTop: Spacing.four,
     textAlign: 'center',
   },
-  tabla: {
+  lista: {
     marginTop: Spacing.three,
+    gap: 6,
   },
-  fila: {
+  cabecera: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: Spacing.two,
+    paddingBottom: 2,
+  },
+  tarjeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.two,
-    borderRadius: Spacing.two,
+    borderRadius: Spacing.three,
   },
   pos: {
-    width: 22,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   equipo: {
     flex: 1,
+    marginLeft: 4,
   },
   num: {
-    width: 30,
+    width: 26,
     textAlign: 'center',
+  },
+  ptsCabecera: {
+    width: 38,
+    textAlign: 'center',
+  },
+  ptsPill: {
+    width: 38,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: '#2F6FED',
+    alignItems: 'center',
   },
 });
