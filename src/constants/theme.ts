@@ -7,22 +7,33 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
-export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
+// Paleta tipo "modern design": azul noche con acentos cian -> magenta.
+// Claro y oscuro usan lo mismo para que la app se vea siempre igual.
+// Color de fondo real de la app (lo pinta _layout.tsx, atrás del <Fondo />).
+export const ColorFondo = '#070638';
+
+const PALETA = {
+  text: '#FFFFFF',
+  background: 'transparent', // transparente para que se vea el fondo con líneas y logo
+  backgroundElement: '#12125C',
+  backgroundSelected: '#1E1E7A',
+  textSecondary: '#A8B3F0',
 } as const;
+
+export const Colors = {
+  light: PALETA,
+  dark: PALETA,
+} as const;
+
+export const Acento = { cian: '#00E5FF', violeta: '#7C4DFF', magenta: '#E040FB' } as const;
+export const GradienteMarca = 'linear-gradient(90deg, #00E5FF 0%, #7C4DFF 55%, #E040FB 100%)';
+
+// En el celular RN usa experimental_backgroundImage; en la web, backgroundImage (CSS).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const estiloGradiente = (g: string = GradienteMarca): any => ({
+  experimental_backgroundImage: g,
+  backgroundImage: g,
+});
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 

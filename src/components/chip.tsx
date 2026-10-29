@@ -15,7 +15,9 @@ export function Chip({
 }) {
   return (
     <Pressable onPress={onPress}>
-      <ThemedView type={activo ? 'backgroundSelected' : 'backgroundElement'} style={styles.chip}>
+      <ThemedView
+        type={activo ? 'backgroundSelected' : 'backgroundElement'}
+        style={[styles.chip, activo && styles.activo]}>
         <ThemedText type="small" themeColor={activo ? 'text' : 'textSecondary'}>
           {texto}
         </ThemedText>
@@ -28,6 +30,9 @@ const styles = StyleSheet.create({
   chip: {
     paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
+  activo: { borderColor: '#00E5FF' },
 });

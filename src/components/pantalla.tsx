@@ -1,11 +1,10 @@
 import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, estiloGradiente, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 // Misma estructura que usan Tabla y Partidos (scroll + márgenes de la tab bar), más un
@@ -42,14 +41,18 @@ export function Pantalla({ volver, children }: { volver?: boolean; children: Rea
       contentInset={insets}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
+      <View
+        pointerEvents="none"
+        style={[styles.brillo, estiloGradiente('linear-gradient(180deg, rgba(0,229,255,0.22) 0%, rgba(124,77,255,0.12) 45%, transparent 100%)')]}
+      />
+      <View style={styles.container}>
         {volver && (
           <Pressable onPress={irAtras} hitSlop={Spacing.two} style={styles.volver}>
             <ThemedText type="linkPrimary">‹ Volver</ThemedText>
           </Pressable>
         )}
         {children}
-      </ThemedView>
+      </View>
     </ScrollView>
   );
 }
@@ -65,6 +68,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingTop: Spacing.three,
     gap: Spacing.three,
+  },
+  brillo: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 280,
   },
   volver: {
     alignSelf: 'flex-start',

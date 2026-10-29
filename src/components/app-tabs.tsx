@@ -43,6 +43,10 @@ export default function AppTabs() {
           renderingMode="template"
         />
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="gestion">
+  <NativeTabs.Trigger.Label>Gestión</NativeTabs.Trigger.Label>
+  <NativeTabs.Trigger.Icon src={require("@/assets/images/tabIcons/home.png")} renderingMode="template" />
+</NativeTabs.Trigger>
     </NativeTabs>
   );
 }

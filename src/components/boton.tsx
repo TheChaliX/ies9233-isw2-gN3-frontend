@@ -1,7 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { estiloGradiente, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Props = {
@@ -12,15 +12,15 @@ type Props = {
   cargando?: boolean;
 };
 
-const AZUL = '#3c87f7';
-const ROJO = '#d93025';
+const NAVY = '#070638';
+const ROJO = '#FF4D6D';
 
 export function Boton({ texto, onPress, variante = 'primario', deshabilitado, cargando }: Props) {
   const theme = useTheme();
   const inactivo = deshabilitado || cargando;
-  const fondo =
-    variante === 'primario' ? AZUL : variante === 'peligro' ? ROJO : theme.backgroundSelected;
-  const colorTexto = variante === 'secundario' ? theme.text : '#ffffff';
+  const primario = variante === 'primario';
+  const fondo = variante === 'peligro' ? ROJO : theme.backgroundSelected;
+  const colorTexto = primario ? NAVY : variante === 'peligro' ? '#FFFFFF' : theme.text;
 
   return (
     <Pressable
@@ -28,7 +28,7 @@ export function Boton({ texto, onPress, variante = 'primario', deshabilitado, ca
       disabled={inactivo}
       style={({ pressed }) => [
         styles.boton,
-        { backgroundColor: fondo },
+        primario ? estiloGradiente() : { backgroundColor: fondo },
         pressed && styles.presionado,
         deshabilitado && styles.deshabilitado,
       ]}>
@@ -47,14 +47,10 @@ const styles = StyleSheet.create({
   boton: {
     minHeight: 44,
     paddingHorizontal: Spacing.three,
-    borderRadius: Spacing.three,
+    borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  presionado: {
-    opacity: 0.7,
-  },
-  deshabilitado: {
-    opacity: 0.4,
-  },
+  presionado: { opacity: 0.8 },
+  deshabilitado: { opacity: 0.4 },
 });
