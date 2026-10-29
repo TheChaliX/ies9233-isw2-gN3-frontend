@@ -19,7 +19,7 @@ const ALIAS = {
   'nottingham': 'nottingham forest',
 };
 const norm = (s) => {
-  const n = s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  const n = s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/\b(a?fc)\b/g, '').replace(/[^a-z0-9& ]/g, '').replace(/\s+/g, ' ').trim();
   return ALIAS[n] ?? n;
 };
@@ -28,6 +28,15 @@ const partirNombre = (full) => {
   return t.length === 1
     ? { nombre: t[0].slice(0, 50), apellido: t[0].slice(0, 50) }
     : { nombre: t[0].slice(0, 50), apellido: t.slice(1).join(' ').slice(0, 50) };
+};
+// Posición de football-data ("Goalkeeper", "Centre-Back", "Defensive Midfield", "Right Winger"...) -> ARQ/DEF/MED/DEL
+const posicionDe = (pos = '') => {
+  const p = (pos ?? '').toLowerCase();
+  if (p.includes('goalkeeper')) return 'ARQ';
+  if (p.includes('back') || p.includes('defen')) return 'DEF';
+  if (p.includes('midfield')) return 'MED';
+  if (p.includes('forward') || p.includes('winger') || p.includes('offence') || p.includes('striker') || p.includes('attack')) return 'DEL';
+  return null;
 };
 
 const q = SEASON ? `?season=${SEASON}` : '';
@@ -48,6 +57,7 @@ for (const t of teams) {
   // Camisetas 1..11 ya las usa el seed: los reales arrancan después del mayor número usado.
   const actuales = await (await fetch(`${BACKEND}/equipos/${equipo.id}/jugadores`)).json();
   let camiseta = Math.max(11, ...actuales.map((j) => j.numeroCamiseta)) + 1;
+  let creadosEquipo = 0;
 
   for (const p of squad) {
     if (camiseta > 99) break;
@@ -55,11 +65,14 @@ for (const t of teams) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       // La API no trae DNI: se usa un identificador provisorio y único "PL<id>".
-      body: JSON.stringify({ equipoId: equipo.id, ...partirNombre(p.name), dni: `PL${p.id}`.slice(0, 10), numeroCamiseta: camiseta }),
+      body: JSON.stringify({
+        equipoId: equipo.id, ...partirNombre(p.name), dni: `PL${p.id}`.slice(0, 10),
+        numeroCamiseta: camiseta, posicion: posicionDe(p.position),
+      }),
     });
-    if (res.ok) { creados++; camiseta++; } else { omitidos++; }
+    if (res.ok) { creados++; creadosEquipo++; camiseta++; } else { omitidos++; }
   }
-  console.log(`${equipo.nombre}: ok`);
+  console.log(`${equipo.nombre}: ${creadosEquipo} jugadores`);
 }
 console.log(`\nCreados: ${creados} | omitidos (ya existían o error): ${omitidos}`);
 if (sinMatch.length) console.log('Sin equipo equivalente en tu base (agregalos al ALIAS):', sinMatch.join(', '));

@@ -4,6 +4,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Boton } from '@/components/boton';
 import { Pantalla } from '@/components/pantalla';
+import { SoloAdmin } from '@/components/solo-admin';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -111,18 +112,32 @@ export default function PartidoDetalleScreen() {
             </View>
           </ThemedView>
 
-          {/* TODO: mostrar solo si el usuario es el delegado de alguno de los dos equipos (todavía no hay login). */}
-          {admiteEventos && (
-            <Boton
-              texto="Cargar eventos (delegado)"
-              onPress={() =>
-                router.push({
-                  pathname: '/partidos/[id]/cargar-evento',
-                  params: { id: String(partido.id) },
-                })
-              }
-            />
-          )}
+          {/* Lo ve cualquiera */}
+          <Boton
+            texto="Ver formaciones"
+            variante="secundario"
+            onPress={() =>
+              router.push({
+                pathname: '/partidos/[id]/formacion',
+                params: { id: String(partido.id) },
+              })
+            }
+          />
+
+          {/* Solo administradores (Gestión → Entrar como administrador) */}
+          <SoloAdmin>
+            {admiteEventos && (
+              <Boton
+                texto="Cargar eventos"
+                onPress={() =>
+                  router.push({
+                    pathname: '/partidos/[id]/cargar-evento',
+                    params: { id: String(partido.id) },
+                  })
+                }
+              />
+            )}
+          </SoloAdmin>
 
           <ThemedText type="smallBold">Eventos</ThemedText>
           {eventos && eventos.length === 0 && (
